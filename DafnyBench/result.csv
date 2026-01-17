@@ -1,0 +1,185 @@
+Problem Domain,Code Version,Verification Result / Error Message,Root Cause Analysis,Fix Iterations
+1,Increment Array,V1,"Success (Verified)",Claude correctly identified the side-effect (modifies clause) and provided strong invariants initially.,0
+2,Reverse Array,V1,"Error: postcondition could not be proved","Weak Loop Invariant. Failed to specify the middle part of the array.",1
+2,Reverse Array,V2,"Error: postcondition could not be proved","Missing Loop Invariant. Claude removed all invariants, making verification impossible.",2
+2,Reverse Array,V3,"Error: postcondition could not be proved","Complexity Overload. Claude added many invariants but failed to handle boundary conditions (indices left/right) correctly when the loop terminates.",3
+2,Reverse Array,V4,"Success (Verified)","Fixed after specific Human Hint. The model correctly added the symmetry invariant (linking 'left' and 'right' indices) only after being explicitly prompted about the missing index relationship.",4
+3,Binary Search,V1,"Error: assertion might not hold (in Test methods)","Weak Postcondition. The method failed to promise (ensure) that the returned index actually points to the target key, or that returning -1 implies the key is truly missing. Thus, the test cases could not verify the results.",1
+3,Binary Search,V2,"Error: assertion might not hold (TestBinarySearch only)","Over-specified Test / Ambiguous Return. The test expects a specific index (e.g., index == 2), but the specification only guarantees that *an* index containing the key is returned. Dafny cannot prove uniqueness of the index without stronger constraints.",2
+3,Binary Search,V3,"Error: assertion might not hold (Test only)","Missing Completeness Specification. The method ensures safety (result is correct if found) but fails to ensure completeness (must find the element if it exists). Dafny assumes returning -1 is valid even for existing elements, causing the test assertion to fail.",3
+3,Binary Search,V4,"Error: assertion might not hold (Test failed)","Failed Verification of Completeness. Even with explicit prompts, the model could not generate the complex 'Window Invariants' required to prove that if the key exists, it *must* be found inside the shrinking [low, high] window. Therefore, Dafny still believes the method might incorrectly return -1.",4
+3,Binary Search,V5,"Error: assertion might not hold (Test failed)","Structural Logic Failure. Although the model added correct 'element properties' invariants (left < key, right > key), it failed to link the indices themselves (`low <= high + 1`). Without this structural invariant, the verifier cannot trust the loop termination state implies the element is truly missing.",5
+4,Search Range,V1,"Error: 8 declarations failed (postcondition violation)","Missing Boundary Invariants. The model implemented the algorithm but failed to provide the 'forall' invariants needed to prove that elements outside the search window do not contain the target.",1
+4,Search Range,V2,"Error: Index out of bounds","Side Effect Safety Failure. Claude failed to establish invariants ensuring that the 'mid' calculation and subsequent array access stay within the range [0, a.Length], especially for empty or single-element arrays.",2
+4,Search Range,V3,"Error: Invariant might not be preserved","Weak Inductive Logic. The loop invariant was not strong enough to survive the update step (e.g., low = mid + 1). The model could not prove that the discarded part of the array was strictly less than or greater than the target.",3
+4,Search Range,V4,"Error: Post-condition could not be proved (SearchRange)","Decomposition Failure. While helper methods (FindFirst/Last) were partially verified, the model failed to link their post-conditions back to the main method's requirements, failing to prove that 'first' is indeed the absolute minimum index.",4
+4,Search Range,V5,"Error: Invariant violation / Logic breakdown","Structural Reasoning Gap. After multiple attempts, the model introduced circular or conflicting invariants. It failed to maintain the critical structural invariant (low <= high + 1) while simultaneously proving the target's absence in the eliminated ranges.",
+5,Array Sum,V1,"Error: Loop invariant violation & Post-condition failure","Weak Mathematical Induction. The model failed to provide a strong invariant linking the partial sum to the array sequence. It also used outdated null-checking syntax for non-nullable array types, showing a lack of awareness of modern Dafny constraints.",1
+5,Array Sum,V2,"Error: Assertion failure (Tests) & Lemma verification failed","Proof Decomposition Failure. The model failed the inductive step in its mathematical Lemma (SumSeqAppendLemma). Additionally, it provided postconditions too weak for the Test assertions to satisfy the solver, and failed to account for array slice stability.",2
+5,Array Sum,V3,"Error: Invariant maintenance & Postcondition failure","Inductive Step Gap. Despite using ghost variables and assertions, the solver failed to link the sequence slice 's[..i+1]' to 'TotalSum'. This is due to the solver's inability to automatically perform induction on sequence concatenation without an explicit trigger or a more stable framing.",3
+5,Array Sum,V4,"Success (Verified)","Structural Logic Alignment. The model successfully verified the code after providing an explicit trigger for sequence extensionality (assert s[..i+1][..i] == s[..i]). This hint bridged the gap between the loop's iterative progress and the function's recursive definition.",4
+6,Rotated Search,V1,"Error: Invariant violation","Model implemented standard binary search logic but failed to provide an invariant that defines the 'rotated sorted' property. Dafny cannot prove which half of the array is sorted.",1
+6,Rotated Search,V2,"Error: Index out of bounds","Model tried to fix invariants but introduced an off-by-one error in the 'mid' calculation. Failed to prove 'low <= mid < high' for all iterations.",2
+6,Rotated Search,V3,"Error: Invariant not preserved","Model added a 'Pivot' ghost variable but could not prove that the pivot remains constant or that the target's absence in one half is guaranteed.",3
+6,Rotated Search,V4,"Error: Postcondition failure","Model simplified the invariants but they became too weak to prove the 'Not Found' (-1) case. Dafny rejected the claim that target is missing if not found.",4
+6,Rotated Search,V5,"Error: Logic Breakdown / Verification Timeout","Final Failure: Model introduced circular invariants and redundant assertions. The complexity of the branching logic exceeded the model's reasoning capacity.",5
+7,Array Init,V1,"Error: assignment might violate modifies clause","Side Effect Failure. The model implemented the loop but forgot the 'modifies a' clause. Dafny prevents any modification to the array heap without explicit permission.",1
+7,Array Init,V2,"Error: postcondition could not be proved","Weak Loop Invariant. The model added the modifies clause and the loop boundary invariant (0 <= i <= a.Length), but failed to specify that elements *before* index 'i' were already set to 'v'.",2
+7,Array Init,V3,"Success (Verified)","Success: Correct Side Effect & Strong Invariant. The model added 'invariant forall k :: 0 <= k < i ==> a[k] == v', allowing Dafny to prove the array's state at the end of the loop.",3
+8,Last Occurrence,V1,"Error: postcondition might not hold (LastIndex)","Missing Negative Invariant. The model implemented a backward loop (from a.Length - 1 to 0) but failed to provide an invariant stating that all elements after the current index 'i' are NOT the target. Dafny could not prove that the returned index was truly the 'last' one.",1
+8,Last Occurrence,V2,"Success (Verified)","Strong Inductive Invariant. The model added 'invariant forall k :: i < k < a.Length ==> a[k] != x'. It also correctly ensured memory safety (side effect) by keeping the index 'i' within bounds [0, a.Length] to prevent out-of-bounds access.",2
+9,K-th Smallest,V1,"Error: Index out of bounds (Side Effect)","Memory Safety Failure. The model calculated 'j = k - i', but failed to provide invariants proving that 'j' always stays within [0, B.Length], leading to potential out-of-bounds access on the second array.",1
+9,K-th Smallest,V2,"Error: Invariant might not be preserved","Structural Invariant Failure. The model added partition logic (A[i-1] <= B[j]) but failed to prove the inductive step when 'low' or 'high' is updated. The relationship between the two array pointers was too complex for the solver.",2
+9,K-th Smallest,V3,"Error: Postcondition could not be proved","Quantifier Complexity. The model attempted to prove that 'exactly K-1 elements' are smaller using 'forall' over two arrays. However, it lacked the 'counting' logic or lemmas to bridge the partition boundaries to the final result.",3
+9,K-th Smallest,V4,"Error: Verification timed out / Assertion might not hold","Logic Fragmentation. To fix V3, the model added too many unproven assertions and ghost variables. The Z3 solver timed out trying to resolve the inter-dependencies between the sortedness of A, the sortedness of B, and the partition property.",4
+9,K-th Smallest,V5,"Error: Structural Logic Failure (Final Collapse)","Abstraction Gap. In the final attempt, the model tried to use a recursive lemma to prove the K-th property, but the lemma itself failed to verify. The model could not maintain the 'Total Order' invariant across two separate memory heaps.",5
+10,Find Absolute Value,V1,"Success (Verified)",No loops involved. Claude correctly used requires/ensures for conditional branching logic.,1
+11,Dutch National Flag,V1,"Error: Index out of bounds","Side Effect Failure. The model used three pointers (low, mid, high) but lacked invariants to prove 0 <= mid < a.Length, leading to immediate memory safety violations upon array access.",1
+11,Dutch National Flag,V2,"Error: Invariant might not be preserved","Boundary Logic Failure. Claude added the invariant 0 <= low <= mid <= high < a.Length. However, the loop terminates when mid > high, causing the invariant to be violated at the final step.",2
+11,Dutch National Flag,V3,"Error: Post-condition violation","Partition Property Failure. The model adjusted boundaries to mid <= high + 1 but failed to prove that elements swapped to the end were strictly 2s (forall k :: high < k < a.Length ==> a[k] == 2).",3
+11,Dutch National Flag,V4,"Error: Assertion violation (Permutation)","Multiset Logic Failure. To prove the array is a permutation, Dafny requires proof that the multiset is preserved during swaps. Claude failed to provide the necessary intermediate assertions or ghost updates.",4
+11,Dutch National Flag,V5,"Error: Logic Breakdown / Timeout","Structural Collapse. In the final attempt, the model overloaded the Z3 solver with redundant asserts. It incorrectly updated boundaries (e.g., high := mid - 1 instead of high - 1), leading to total logical failure.",5
+12,Array Copying,V1,"Error: assignment might update an object not in the modifies clause","Side Effect Gap. V1 missed the 'modifies' clause for the destination array, causing the prover to reject updates to the array.",1
+12,Array Copying,V2,"Success (Verified)","Fixed Side Effect Gap. Added the 'modifies' clause and used a strong mapping invariant to satisfy the frame condition.",2
+13,Selection Sort,V1,"Error: Loop invariant violation","Weak Induction. The model failed to prove that the prefix is sorted after each iteration of the outer loop.",1
+13,Selection Sort,V2,"Error: Postcondition failure","Partition Property Gap. Claude failed to prove that the prefix contains the smallest elements simultaneously.",2
+13,Selection Sort,V3,"Error: Invariant not preserved","Double Loop Complexity. The model struggled to coordinate the inner and outer loop invariants for the minimum-finding logic.",3
+13,Selection Sort,V4,"Success (Verified)","Double Loop Invariant. Claude struggled twice to prove that the prefix is sorted and contains the smallest elements simultaneously.",4
+14,Fibonacci Iterative,V1,"Error: Postcondition failure","Numeric Logic failure. Failed to track the pair relationship of (n-1) and (n-2) in the invariant.",1
+14,Fibonacci Iterative,V2,"Error: Invariant might not be preserved","Inductive Step Gap. The model could not prove the relationship between consecutive Fibonacci values during loop updates.",2
+14,Fibonacci Iterative,V3,"Success (Verified)","Numeric Logic failure. V1/V2 failed to track the pair relationship of (n-1) and (n-2) in the invariant. Fixed in V3.",3
+15,Kadane's Algorithm,V1,"Error: Invariant violation","Failed to formalize the relationship between the local subarray sum and the global maximum.",1
+15,Kadane's Algorithm,V2,"Error: Postcondition failure","The model could not prove that the maximum found is indeed the maximum over all segments.",2
+15,Kadane's Algorithm,V3,"Error: Invariant not preserved","Weak invariant for tracking the running sum and its relationship to the global maximum.",3
+15,Kadane's Algorithm,V4,"Error: Logic Breakdown","Model introduced conflicting invariants between local and global maximums.",4
+15,Kadane's Algorithm,V5,"Error: Invariant violation","Final Failure: Model could not formalize the relationship between the local subarray sum and the global maximum over all segments.",5
+16,Find Minimum,V1,"Success (Verified)",Simple loop with a strong invariant: 'forall k :: 0 <= k < i ==> min <= a[k]'. Correct side-effect handling.,1
+17,Linear Search First,V1,"Error: Postcondition failure","Inductive Step Gap. Failed to prove that elements BEFORE the found index are not the target.",1
+17,Linear Search First,V2,"Error: Invariant might not be preserved","Model added weak invariants that could not maintain the 'not found before i' property.",2
+17,Linear Search First,V3,"Success (Verified)","Inductive Step Gap. V1/V2 failed to prove that elements BEFORE the found index are not the target. Fixed with 'forall' in V3.",3
+18,Matrix Multiplication,V1,"Error: Invariant violation","Triple-nested loop complexity. Failed to establish invariants for the dot product calculation.",1
+18,Matrix Multiplication,V2,"Error: Index out of bounds","Side effect failure. Model failed to prove boundary conditions for matrix indices.",2
+18,Matrix Multiplication,V3,"Error: Verification Timeout","Solver timeout. The complexity of nested loop invariants exceeded the solver's capacity.",3
+18,Matrix Multiplication,V4,"Error: Postcondition failure","Failed to prove that the computed result matrix is correct according to the dot product specification.",4
+18,Matrix Multiplication,V5,"Error: Verification Timeout","Final Failure: Triple-nested loop invariants for dot products created a logic explosion that the Z3 solver could not resolve.",5
+19,Bubble Sort,V1,"Error: Loop invariant violation","Failed to prove that each pass bubbles the largest element to the end.",1
+19,Bubble Sort,V2,"Error: Invariant not preserved","Nested Loop Complexity. Model could not coordinate inner and outer loop invariants.",2
+19,Bubble Sort,V3,"Error: Postcondition failure","Failed to prove that the array is fully sorted after all passes.",3
+19,Bubble Sort,V4,"Success (Verified)","Nested Loop Complexity. Model failed 3 times to prove each pass bubbles the largest element to the end. Success after human hint.",4
+20,Double Array Elements,V1,"Error: assignment might update an object not in the modifies clause","Side Effect Failure. V1 missed the 'modifies' clause.",1
+20,Double Array Elements,V2,"Success (Verified)","Side Effect Failure. V1 missed the 'modifies' clause. V2 fixed it and established the mapping invariant.",2
+21,Check if Sorted,V1,"Success (Verified)",Simple linear scan. Claude correctly used an invariant comparing adjacent elements: 'a[k-1] <= a[k]'.,1
+22,Insertion Sort,V1,"Error: Loop invariant violation","Shift Logic failure. Failed to prove the 'sorted and partitioned' property.",1
+22,Insertion Sort,V2,"Error: Invariant not preserved","Model could not maintain invariants during the inner loop element shifting.",2
+22,Insertion Sort,V3,"Error: Postcondition failure","Failed to prove that the entire array is sorted after the outer loop completes.",3
+22,Insertion Sort,V4,"Success (Verified)","Shift Logic failure. Model failed to prove the 'sorted and partitioned' property after the inner loop. Fixed in V4.",4
+23,Lomuto Partition,V1,"Error: Invariant violation","Failed to establish the partition invariant: elements left of pivot are smaller.",1
+23,Lomuto Partition,V2,"Error: Postcondition failure","Model could not prove that all elements in left partition are <= pivot.",2
+23,Lomuto Partition,V3,"Error: Invariant not preserved","Weak invariant for the right partition (elements > pivot).",3
+23,Lomuto Partition,V4,"Error: Logic Breakdown","Model introduced conflicting invariants for left and right partitions.",4
+23,Lomuto Partition,V5,"Error: Postcondition failure","Final Failure: Claude failed to prove that all elements in the left partition are <= pivot and right are > pivot after 5 tries.",5
+24,Power Function (x^n),V1,"Error: Invariant violation","Arithmetic Invariant. Failed to prove 'res == x^i' due to weak induction.",1
+24,Power Function (x^n),V2,"Error: Postcondition failure","Model could not link the loop variable to the exponential result.",2
+24,Power Function (x^n),V3,"Success (Verified)","Arithmetic Invariant. Model failed to prove 'res == x^i' due to weak induction. Fixed in V3 with tighter loop bounds.",3
+25,Palindrome Checker,V1,"Error: Invariant violation","Symmetry Invariant failure. Failed to link 'i' and 'length-1-i' across the midpoint.",1
+25,Palindrome Checker,V2,"Error: Postcondition failure","Model could not prove that checking up to the midpoint is sufficient.",2
+25,Palindrome Checker,V3,"Error: Invariant not preserved","Weak invariant for the symmetry property.",3
+25,Palindrome Checker,V4,"Success (Verified)","Symmetry Invariant failure. Claude failed to link 'i' and 'length-1-i' across the midpoint. Fixed in V4 with explicit symmetry.",4
+26,Heapify Down,V1,"Error: Invariant violation","Failed to prove the recursive heap property (parent >= children).",1
+26,Heapify Down,V2,"Error: Heap Property Violation","Model could not prove the heap property remains stable after a swap.",2
+26,Heapify Down,V3,"Error: Postcondition failure","Failed to establish that all nodes satisfy the heap property after heapify.",3
+26,Heapify Down,V4,"Error: Logic Breakdown","Model introduced conflicting invariants for parent-child relationships.",4
+26,Heapify Down,V5,"Error: Heap Property Violation","Final Failure: Model failed to prove the recursive heap property (parent >= children) remains stable after a structural swap.",5
+27,Find Maximum Index,V1,"Success (Verified)",Correct use of index-based invariant: 'forall k :: 0 <= k < i ==> a[max_idx] >= a[k]'. No side-effect errors.,1
+28,Remove Element In-place,V1,"Error: Invariant violation","Array Size Abstraction. Failed to prove new logical size vs physical size.",1
+28,Remove Element In-place,V2,"Error: Postcondition failure","Model could not prove that all target elements are removed.",2
+28,Remove Element In-place,V3,"Error: Invariant not preserved","Weak invariant for the shifted elements after removal.",3
+28,Remove Element In-place,V4,"Success (Verified)","Array Size Abstraction. Model failed to prove new logical size vs physical size. Fixed in V4 with complex 'forall' for shifted elements.",4
+29,Boyer-Moore Voting,V1,"Error: Invariant violation","Failed to prove the 'majority' property without a counting lemma.",1
+29,Boyer-Moore Voting,V2,"Error: Postcondition failure","Model could not prove that the candidate is indeed the majority element.",2
+29,Boyer-Moore Voting,V3,"Error: Logic Breakdown","Structural Logic Failure. Model introduced conflicting invariants for count and candidate.",3
+29,Boyer-Moore Voting,V4,"Error: Verification Timeout","Solver timeout due to complex quantifier interactions.",4
+29,Boyer-Moore Voting,V5,"Error: Structural Logic Failure","Final Failure: Model could not prove the 'majority' property without a complex counting lemma that it failed to generate.",5
+30,Fill Array,V1,"Error: assignment might update an object not in the modifies clause","Missing Modifies. V1 failed to declare permission to change array heap.",1
+30,Fill Array,V2,"Success (Verified)","Missing Modifies. V1 failed to declare permission to change array heap. V2 added 'modifies' and 'forall' assignment invariant.",2
+31,Count Occurrences,V1,"Error: Postcondition failure","Summation Proof Gap. Failed to link the counter to a ghost sequence.",1
+31,Count Occurrences,V2,"Error: Invariant not preserved","Model could not maintain the counting invariant during loop execution.",2
+31,Count Occurrences,V3,"Success (Verified)","Summation Proof Gap. V1/V2 failed to link the counter to a ghost sequence. V3 used a ghost sequence to verify the count.",3
+32,Matrix Rotation (In-place),V1,"Error: Index out of bounds","2D index mapping failed. Model could not prove indices stay within bounds.",1
+32,Matrix Rotation (In-place),V2,"Error: Invariant violation","Failed to establish invariants for the rotation transformation.",2
+32,Matrix Rotation (In-place),V3,"Error: Side Effect failure","Model could not prove that only intended cells are modified.",3
+32,Matrix Rotation (In-place),V4,"Error: Verification Timeout","Solver timeout due to complex 2D index relationships.",4
+32,Matrix Rotation (In-place),V5,"Error: Index Out of Bounds","Final Failure: 2D index mapping (row, col) to (n-1-col, row) created side-effect proofs the model could not resolve in 5 iterations.",5
+33,Binary Search (Strict),V1,"Error: Postcondition failure","Completeness Proof. Failed the 'not found' case.",1
+33,Binary Search (Strict),V2,"Error: Invariant violation","Model could not prove the Window Invariant shrinks correctly.",2
+33,Binary Search (Strict),V3,"Error: Invariant not preserved","Weak invariant for proving the key's absence.",3
+33,Binary Search (Strict),V4,"Success (Verified)","Completeness Proof. Previous attempts failed the 'not found' case. V4 used a strict Window Invariant to prove the key's absence.",4
+34,Longest Common Prefix,V1,"Error: Invariant violation","Failed to prove the 'commonality' property across multiple strings.",1
+34,Longest Common Prefix,V2,"Error: Postcondition failure","Model could not prove the prefix is common to all strings.",2
+34,Longest Common Prefix,V3,"Error: Logic Breakdown","Structural failure in handling sequence-like structures within arrays.",3
+34,Longest Common Prefix,V4,"Error: Verification Timeout","Solver timeout due to complex quantifier interactions over multiple sequences.",4
+34,Longest Common Prefix,V5,"Error: Invariant not preserved","Final Failure: Model could not prove the 'commonality' property across multiple string-like sequences within the array.",5
+35,Is Constant Array,V1,"Success (Verified)",Linear scan for equality. Claude correctly established 'forall k :: 0 <= k < i ==> a[k] == a[0]' in one shot.,1
+36,Find All Evens (Filter),V1,"Error: Side Effect failure","Model couldn't prove the new list contained only evens.",1
+36,Find All Evens (Filter),V2,"Error: Postcondition failure","Failed to establish the mapping between input and filtered output.",2
+36,Find All Evens (Filter),V3,"Success (Verified)","Side Effect / Ghost State. Model couldn't prove the new list contained only evens until V3 added sequence mapping.",3
+37,Shell Sort Gap Logic,V1,"Error: Invariant violation","Failed to formalize the 'k-sorted' property.",1
+37,Shell Sort Gap Logic,V2,"Error: Postcondition failure","Model could not prove the array is fully sorted when gap = 1.",2
+37,Shell Sort Gap Logic,V3,"Error: Invariant not preserved","Weak invariant for tracking the 'k-sorted' property as gap shrinks.",3
+37,Shell Sort Gap Logic,V4,"Error: Logic Breakdown","Model introduced conflicting invariants for different gap values.",4
+37,Shell Sort Gap Logic,V5,"Error: Invariant violation","Final Failure: Model could not formalize the 'k-sorted' property and prove it is preserved as the gap shrinks to 1.",5
+38,Merge Sorted Arrays,V1,"Error: Invariant violation","Three-Pointer Coordination. Failed to coordinate indices i, j, and k.",1
+38,Merge Sorted Arrays,V2,"Error: Postcondition failure","Model could not prove the merged array is sorted.",2
+38,Merge Sorted Arrays,V3,"Error: Invariant not preserved","Weak invariant for linking k == i + j.",3
+38,Merge Sorted Arrays,V4,"Success (Verified)","Three-Pointer Coordination. Claude struggled to coordinate indices i, j, and k. Success in V4 after linking k == i + j.",4
+39,Graph Node Visit,V1,"Error: Invariant violation","Failed to prove that adding a node maintains the acyclic property.",1
+39,Graph Node Visit,V2,"Error: Postcondition failure","Model could not prove the visited set maintains graph properties.",2
+39,Graph Node Visit,V3,"Error: Logic Breakdown","Structural failure in maintaining the acyclic traversal property.",3
+39,Graph Node Visit,V4,"Error: Verification Timeout","Solver timeout due to complex graph property interactions.",4
+39,Graph Node Visit,V5,"Error: Invariant not preserved","Final Failure: Model could not prove that adding a node to the 'visited' set maintains the acyclic property of the traversal.",5
+40,Square Array Values,V1,"Error: assignment might update an object not in the modifies clause","Side Effect Failure. V1 missed 'modifies'.",1
+40,Square Array Values,V2,"Success (Verified)","Side Effect Failure. V1 missed 'modifies'. V2 added it and proved 'a[k] == old(a[k]) * old(a[k])'.",2
+41,Factorial Iterative,V1,"Error: Postcondition failure","Verification Gap. Failed the inductive step for 'res == i!'.",1
+41,Factorial Iterative,V2,"Error: Invariant not preserved","Model could not link the loop variable to the factorial computation.",2
+41,Factorial Iterative,V3,"Success (Verified)","Verification Gap. V1/V2 failed the inductive step for 'res == i!'. Fixed in V3 by referencing a recursive total function.",3
+42,Reverse Array (Seq),V1,"Error: Invariant violation","Symmetry Logic. Failed to prove the swap preserves the other elements.",1
+42,Reverse Array (Seq),V2,"Error: Postcondition failure","Model could not prove the reversed sequence matches the specification.",2
+42,Reverse Array (Seq),V3,"Error: Invariant not preserved","Weak invariant for the symmetry property during swapping.",3
+42,Reverse Array (Seq),V4,"Success (Verified)","Symmetry Logic. V1-V3 failed to prove the swap preserves the other elements. V4 used a ghost sequence for the inversion proof.",4
+43,Linked List Reversal,V1,"Error: Potential Null Dereference","Model failed to prove the pointer chain remains valid.",1
+43,Linked List Reversal,V2,"Error: Invariant violation","Failed to establish invariants for the acyclic property.",2
+43,Linked List Reversal,V3,"Error: Heap Memory Safety","Model could not prove heap memory safety during reversal.",3
+43,Linked List Reversal,V4,"Error: Logic Breakdown","Structural failure in maintaining pointer relationships.",4
+43,Linked List Reversal,V5,"Error: Potential Null Dereference","Final Failure: Model failed to prove the pointer chain remains valid and acyclic during the in-place reversal process.",5
+44,Transitive Property,V1,"Error: Postcondition failure","Logical Induction. Failed to prove that local sortedness implies global sortedness.",1
+44,Transitive Property,V2,"Error: Invariant violation","Model could not establish the transitive property across all elements.",2
+44,Transitive Property,V3,"Error: Lemma verification failed","Failed to prove the transitivity lemma for the sorted property.",3
+44,Transitive Property,V4,"Success (Verified)","Logical Induction. Claude failed twice to prove that local sortedness implies global sortedness. Fixed with a Lemma in V4.",4
+45,BST Insertion,V1,"Error: Invariant violation","Failed to prove the search tree property is maintained.",1
+45,BST Insertion,V2,"Error: Heap Memory Safety","Model could not prove heap memory safety during insertion.",2
+45,BST Insertion,V3,"Error: Postcondition failure","Failed to prove that modifying a leaf node preserves the BST property.",3
+45,BST Insertion,V4,"Error: Logic Breakdown","Structural failure in maintaining the tree invariants.",4
+45,BST Insertion,V5,"Error: Heap Memory Safety","Final Failure: Claude could not prove that modifying a leaf node does not violate the search tree property of the root.",5
+46,Filter Even Numbers,V1,"Error: Postcondition failure","Counting Invariant. Failed to prove the length of the result matches the count of evens.",1
+46,Filter Even Numbers,V2,"Error: Invariant violation","Model could not maintain the counting invariant during filtering.",2
+46,Filter Even Numbers,V3,"Error: Side Effect failure","Failed to prove the result sequence contains only even numbers.",3
+46,Filter Even Numbers,V4,"Success (Verified)","Counting Invariant. Model failed to prove the length of the result matches the count of evens. Fixed in V4 with ghost variables.",4
+47,Longest Increasing Subseq,V1,"Error: Invariant violation","DP complexity. Failed to establish invariants for the DP table.",1
+47,Longest Increasing Subseq,V2,"Error: Postcondition failure","Model could not prove the computed subsequence is the longest.",2
+47,Longest Increasing Subseq,V3,"Error: Verification Timeout","Solver timeout due to complex relational invariants.",3
+47,Longest Increasing Subseq,V4,"Error: Logic Breakdown","Structural failure in maintaining DP table relationships.",4
+47,Longest Increasing Subseq,V5,"Error: Verification Timeout","Final Failure: DP in Dafny requires complex relational invariants between the table and all possible subsequences.",5
+48,Remove Duplicates,V1,"Error: Invariant violation","Unique Property. Failed to prove the 'no duplicates' post-condition.",1
+48,Remove Duplicates,V2,"Error: Postcondition failure","Model could not prove all duplicates are removed.",2
+48,Remove Duplicates,V3,"Error: Invariant not preserved","Weak invariant for proving uniqueness after shifting.",3
+48,Remove Duplicates,V4,"Success (Verified)","Unique Property. Model failed to prove the 'no duplicates' post-condition after shifting. Fixed in V4 with nested quantifiers.",4
+49,Minimum Path Sum,V1,"Error: Invariant violation","DP complexity. Failed to establish invariants for the path sum table.",1
+49,Minimum Path Sum,V2,"Error: Postcondition failure","Model could not prove the computed path is the absolute minimum.",2
+49,Minimum Path Sum,V3,"Error: Verification Timeout","Solver timeout due to complex path exploration.",3
+49,Minimum Path Sum,V4,"Error: Logic Breakdown","Structural failure in maintaining path relationships.",4
+49,Minimum Path Sum,V5,"Error: Postcondition failure","Final Failure: Model failed to prove the computed path is the absolute minimum among all possible paths in the matrix.",5
+50,QuickSort Partitioning,V1,"Error: Invariant violation","Failed to maintain the pivot's sorted position property.",1
+50,QuickSort Partitioning,V2,"Error: Postcondition failure","Model could not prove elements are correctly partitioned around pivot.",2
+50,QuickSort Partitioning,V3,"Error: Invariant not preserved","Weak invariant for the partition logic during swapping.",3
+50,QuickSort Partitioning,V4,"Error: Logic Breakdown","Model introduced conflicting invariants for pivot position.",4
+50,QuickSort Partitioning,V5,"Error: Structural Logic Failure","Final Failure: Model could not maintain the pivot's sorted position property while swapping elements in 5 iterations.",5

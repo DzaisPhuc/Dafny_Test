@@ -22,3 +22,5 @@ __pycache__/
 # Dataset/results
 *.csv
 *.txt
+!DafnyBench/result.csv
+!DafnyBench/result1.txt

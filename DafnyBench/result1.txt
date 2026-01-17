@@ -1,0 +1,42 @@
+Problem Domain,Code Version,Verification Result / Error Message,Root Cause Analysis,Fix Iterations
+
+
+
+13,Selection Sort,V4,"Success (Verified)","Double Loop Invariant. Claude struggled twice to prove that the prefix is sorted and contains the smallest elements simultaneously.",4
+14,Fibonacci Iterative,V3,"Success (Verified)","Numeric Logic failure. V1/V2 failed to track the pair relationship of (n-1) and (n-2) in the invariant. Fixed in V3.",3
+15,Kadane's Algorithm,V5,"Error: Invariant violation","Final Failure: Model could not formalize the relationship between the local subarray sum and the global maximum over all segments.",5
+16,Find Minimum,V1,"Success (Verified)",Simple loop with a strong invariant: 'forall k :: 0 <= k < i ==> min <= a[k]'. Correct side-effect handling.,1
+17,Linear Search First,V3,"Success (Verified)","Inductive Step Gap. V1/V2 failed to prove that elements BEFORE the found index are not the target. Fixed with 'forall' in V3.",3
+18,Matrix Multiplication,V5,"Error: Verification Timeout","Final Failure: Triple-nested loop invariants for dot products created a logic explosion that the Z3 solver could not resolve.",5
+19,Bubble Sort,V4,"Success (Verified)","Nested Loop Complexity. Model failed 3 times to prove each pass bubbles the largest element to the end. Success after human hint.",4
+20,Double Array Elements,V2,"Success (Verified)","Side Effect Failure. V1 missed the 'modifies' clause. V2 fixed it and established the mapping invariant.",2
+21,Check if Sorted,V1,"Success (Verified)",Simple linear scan. Claude correctly used an invariant comparing adjacent elements: 'a[k-1] <= a[k]'.,1
+22,Insertion Sort,V4,"Success (Verified)","Shift Logic failure. Model failed to prove the 'sorted and partitioned' property after the inner loop. Fixed in V4.",4
+23,Lomuto Partition,V5,"Error: Postcondition failure","Final Failure: Claude failed to prove that all elements in the left partition are <= pivot and right are > pivot after 5 tries.",5
+24,Power Function (x^n),V3,"Success (Verified)","Arithmetic Invariant. Model failed to prove 'res == x^i' due to weak induction. Fixed in V3 with tighter loop bounds.",3
+25,Palindrome Checker,V4,"Success (Verified)","Symmetry Invariant failure. Claude failed to link 'i' and 'length-1-i' across the midpoint. Fixed in V4 with explicit symmetry.",4
+26,Heapify Down,V5,"Error: Heap Property Violation","Final Failure: Model failed to prove the recursive heap property (parent >= children) remains stable after a structural swap.",5
+27,Find Maximum Index,V1,"Success (Verified)",Correct use of index-based invariant: 'forall k :: 0 <= k < i ==> a[max_idx] >= a[k]'. No side-effect errors.,1
+28,Remove Element In-place,V4,"Success (Verified)","Array Size Abstraction. Model failed to prove new logical size vs physical size. Fixed in V4 with complex 'forall' for shifted elements.",4
+29,Boyer-Moore Voting,V5,"Error: Structural Logic Failure","Final Failure: Model could not prove the 'majority' property without a complex counting lemma that it failed to generate.",5
+30,Fill Array,V2,"Success (Verified)","Missing Modifies. V1 failed to declare permission to change array heap. V2 added 'modifies' and 'forall' assignment invariant.",2
+31,Count Occurrences,V3,"Success (Verified)","Summation Proof Gap. V1/V2 failed to link the counter to a ghost sequence. V3 used a ghost sequence to verify the count.",3
+32,Matrix Rotation (In-place),V5,"Error: Index Out of Bounds","Final Failure: 2D index mapping (row, col) to (n-1-col, row) created side-effect proofs the model could not resolve in 5 iterations.",5
+33,Binary Search (Strict),V4,"Success (Verified)","Completeness Proof. Previous attempts failed the 'not found' case. V4 used a strict Window Invariant to prove the key's absence.",4
+34,Longest Common Prefix,V5,"Error: Invariant not preserved","Final Failure: Model could not prove the 'commonality' property across multiple string-like sequences within the array.",5
+35,Is Constant Array,V1,"Success (Verified)",Linear scan for equality. Claude correctly established 'forall k :: 0 <= k < i ==> a[k] == a[0]' in one shot.,1
+36,Find All Evens (Filter),V3,"Success (Verified)","Side Effect / Ghost State. Model couldn't prove the new list contained only evens until V3 added sequence mapping.",3
+37,Shell Sort Gap Logic,V5,"Error: Invariant violation","Final Failure: Model could not formalize the 'k-sorted' property and prove it is preserved as the gap shrinks to 1.",5
+38,Merge Sorted Arrays,V4,"Success (Verified)","Three-Pointer Coordination. Claude struggled to coordinate indices i, j, and k. Success in V4 after linking k == i + j.",4
+39,Graph Node Visit,V5,"Error: Invariant not preserved","Final Failure: Model could not prove that adding a node to the 'visited' set maintains the acyclic property of the traversal.",5
+40,Square Array Values,V2,"Success (Verified)","Side Effect Failure. V1 missed 'modifies'. V2 added it and proved 'a[k] == old(a[k]) * old(a[k])'.",2
+41,Factorial Iterative,V3,"Success (Verified)","Verification Gap. V1/V2 failed the inductive step for 'res == i!'. Fixed in V3 by referencing a recursive total function.",3
+42,Reverse Array (Seq),V4,"Success (Verified)","Symmetry Logic. V1-V3 failed to prove the swap preserves the other elements. V4 used a ghost sequence for the inversion proof.",4
+43,Linked List Reversal,V5,"Error: Potential Null Dereference","Final Failure: Model failed to prove the pointer chain remains valid and acyclic during the in-place reversal process.",5
+44,Transitive Property,V4,"Success (Verified)","Logical Induction. Claude failed twice to prove that local sortedness implies global sortedness. Fixed with a Lemma in V4.",4
+45,BST Insertion,V5,"Error: Heap Memory Safety","Final Failure: Claude could not prove that modifying a leaf node does not violate the search tree property of the root.",5
+46,Filter Even Numbers,V4,"Success (Verified)","Counting Invariant. Model failed to prove the length of the result matches the count of evens. Fixed in V4 with ghost variables.",4
+47,Longest Increasing Subseq,V5,"Error: Verification Timeout","Final Failure: DP in Dafny requires complex relational invariants between the table and all possible subsequences.",5
+48,Remove Duplicates,V4,"Success (Verified)","Unique Property. Model failed to prove the 'no duplicates' post-condition after shifting. Fixed in V4 with nested quantifiers.",4
+49,Minimum Path Sum,V5,"Error: Postcondition failure","Final Failure: Model failed to prove the computed path is the absolute minimum among all possible paths in the matrix.",5
+50,QuickSort Partitioning,V5,"Error: Structural Logic Failure","Final Failure: Model could not maintain the pivot's sorted position property while swapping elements in 5 iterations.",5
